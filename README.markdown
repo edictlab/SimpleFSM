@@ -1,0 +1,171 @@
+# SimpleFSM
+
+A simple and lightweight domain specific language (DSL) for modeling finite state machines (FSM).
+
+## Installation
+
+Install SimpleFSM gem as any other Ruby gem:
+
+      $ ruby gem install simplefsm
+
+or, if you use JRuby:
+
+      $ jruby -S gem install simplefsm
+
+## Features and usage
+
+You can read about SimpleFSM in our papers. PDF files are available at [this location](http://scholar.google.com/citations?user=7RoQiiQAAAAJ).
+
+SimpleFSM DSL can be used to model an FSM for any domain. The DSL was developed in order to support the following requirements:
+
+ - unlimited number of states can be used,
+ - unlimited number of transitions can be specified,
+ - state transition can be conditional, 
+ - an action can be invoked on entering a state and/or exiting a state,
+ - an action can be executed on an event, and
+ - events can receive an arbitrary number of arguments which are sent to all related actions during the event processing.
+
+FSM actions are modeled using Ruby methods. This makes the FSM model compact and clear. The entire DSL is implemented in a Ruby module called `SimpleFSM`.
+
+To utilize the DSL in a new class, the DSL module
+should be included into the class. The state machine,
+that is implemented in the class, is defined within the
+block of code after the `fsm` keyword.
+
+## Example
+
+Let's have a class Worker with two states as depicted in the following state diagram:
+
+![Worker state diagram](http://edin.ictlab.com.ba/images/worker.png)
+
+Code of the `Worker` class and its FSM definition could be:
+
+    require 'simplefsm'
+    class Worker
+      include SimpleFSM
+
+      fsm do
+        state :resting
+        state :working, 
+          :enter => :check_in, 
+          :exit => :check_out
+
+        transitions_for :resting do
+          event :work, :new => :working
+        end
+
+        transitions_for :working do
+          event :rest, :new => :resting
+        end
+      end
+
+      private
+
+      def check_in(args)
+        puts "OK. I'm working now."
+        puts "My tool: #{args.join(', ')}" if args.size > 0
+      end
+
+      def check_out(args)
+        puts "Hurray! End of my shift."
+        puts " --------------------"
+      end
+    end
+
+The class can be utilized as follows:
+
+    joe = Worker.new
+    joe.run
+    joe.work :hammer               # =>  OK. I'm working now.
+                                   # =>  My tool: hammer
+    # some other code
+    joe.rest                       # => Hurray! End of my shift.
+                                   # =>  -------------------- 
+
+    joe.work :drill, :hammer       # =>  OK. I'm working now.
+                                   # =>  My tool: drill, hammer
+    # some other code
+    joe.rest                       # => Hurray! End of my shift.
+                                   # =>  -------------------- 
+
+## Finite state machine definition and DSL keywords
+
+### States
+
+FSM states are defined using the `state` statement. The statement accepts optional
+parameters, `:enter` and `:exit`. These parameters
+can be used to specify actions that are executed when
+entering or leaving the state that is being defined.
+
+The initial state is the first state specified within the `fsm` block.
+
+### Transitions
+
+FSM state transitions are defined within the
+`transitions_for` statement. The arbitrary number
+of transitions for any state can be specified using the
+`event` statement.
+
+The FSM remains idle when an event is received which is not
+specified in the `transition_for` statement related to
+the current state.
+The following is the full list of parameters that the `event` specification accepts inside the `transition_for` statement:
+
+- `:new` specifies the destination state for the transition. The parameter is mandatory. If `:new` is `nil`, event is triggered but the transition is not performed
+and the FSM remains in the same state.
+- `:guard` specifies the Boolean function for checking the transition’s condition. The parameter is optional. The event is triggered and transition is performed only if this method returns true.
+- `:do` specifies the method to be called when the event is fired. This parameter is optional. If `:guard` is specified, then the `:do` method is called only if the `:guard` method returns `true`.
+
+Two aditional versions of `transitions_for` specification are supported, both without using the `do-end` block. 
+The transitions from the `Worker` class can be written in the following forms:
+
+    transitions_for :resting,
+      event(:work, :new => :working)
+    transitions_for :working,
+      event(:rest, :new => :resting)
+
+ or
+
+    transitions_for :resting,
+      {event => :work, :new => :working}
+    transitions_for :working,
+      {event => :rest, :new => :resting}
+
+States specified as `:new` in any `transitions_for` statement are created if they are not explicitly defined using the state statement.
+However, if `:exit` and `:enter` actions for the state are required the state statement must be used. States specified in the fsm block will become available in
+the objects that are instances of the class with the `fsm` specification. For every event in the `fsm` block, an object will get a method with the same name, which
+can be used to generate the event.
+
+### Starting the machine
+
+  The machine within the object is started calling the `run` instance method. After that the machine performs transitions according to the `fsm` specification.
+
+## Remarks
+
+### Injected methods and variables
+
+Including the `SimpleFSM` module injects the following methods and variables into the destination class. Do not redefine them!
+
+#### Class and instance methods
+- public instance methods: `run`, `state`
+- private instance methods: `do_transform`, `fsm_responds_to?`, `fsm_state_responds_to?`, `get_state_events`, `fsm_prepare_state`, `fsm_save_state`
+- private class methods: `fsm`, `state`, `transitions_for`, `event`, `add_state_data`, `add_transition`
+
+#### Variables
+
+- instance variable: `@state`
+- class variables: `@@states`, `@@events`, `@@transitions`, `@@current_state_setup`
+### Other remarks
+
+Private instance methods `fsm_prepare_state` and `fsm_save_state` are called by the SimpleFSM facility when any event is fired.
+
+`fsm_prepare_state` method is called before and
+`fsm_save_state` method is called after actual state transition and all consequent actions. 
+
+The purpose of them is to perform state loading/saving if the state is saved in an external database or similar facility. In that case, they
+should be overriden according to the application. 
+
+As an example, in `SipFSM`, gem for fast SIP application development based on `SimpleFSM`, those methods are overriden so that states for all calls are saved in corresonding Java SIP Application Session objects inside SIP servlet container.
+
+
+
