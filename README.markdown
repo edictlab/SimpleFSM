@@ -39,7 +39,7 @@ Let's have a class Worker with two states as depicted in the following state dia
 ![Worker state diagram](http://edin.ictlab.com.ba/images/worker.png)
 
 Code of the `Worker` class and its FSM definition could be:
-
+```ruby
     require 'simplefsm'
     class Worker
       include SimpleFSM
@@ -71,6 +71,7 @@ Code of the `Worker` class and its FSM definition could be:
         puts " --------------------"
       end
     end
+```
 
 The class can be utilized as follows:
 
