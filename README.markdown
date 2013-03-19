@@ -165,7 +165,7 @@ Private instance methods `fsm_prepare_state` and `fsm_save_state` are called by 
 The purpose of them is to perform state loading/saving if the state is saved in an external database or similar facility. In that case, they
 should be overriden according to the application. 
 
-As an example, in `SipFSM`, gem for fast SIP application development based on `SimpleFSM`, those methods are overriden so that states for all calls are saved in corresonding Java SIP Application Session objects inside SIP servlet container.
+As an example, in `SipFSM`, a gem for fast SIP application development based on `SimpleFSM`, those methods are overriden so that states for all calls are saved in corresonding Java SIP Application Session objects inside SIP servlet container.
 
 
 
