@@ -75,7 +75,7 @@ Code of the `Worker` class and its FSM definition could be:
 
 The class can be utilized as follows:
 
-<!-- language-all: lang-or-tag -->
+<!-- language-all: lang-rb -->
     joe = Worker.new
     joe.run
     joe.work :hammer               # =>  OK. I'm working now.
