@@ -39,6 +39,7 @@ Let's have a class Worker with two states as depicted in the following state dia
 ![Worker state diagram](http://edin.ictlab.com.ba/images/worker.png)
 
 Code of the `Worker` class and its FSM definition could be:
+
 ```ruby
     require 'simplefsm'
     class Worker
@@ -75,20 +76,21 @@ Code of the `Worker` class and its FSM definition could be:
 
 The class can be utilized as follows:
 
-<!-- language-all: lang-rb -->
-    joe = Worker.new
-    joe.run
-    joe.work :hammer               # =>  OK. I'm working now.
-                                   # =>  My tool: hammer
-    # some other code
-    joe.rest                       # => Hurray! End of my shift.
-                                   # =>  -------------------- 
+```ruby
+joe = Worker.new
+joe.run
+joe.work :hammer               # =>  OK. I'm working now.
+                               # =>  My tool: hammer
+# some other code
+joe.rest                       # => Hurray! End of my shift.
+                               # =>  -------------------- 
 
-    joe.work :drill, :hammer       # =>  OK. I'm working now.
-                                   # =>  My tool: drill, hammer
-    # some other code
-    joe.rest                       # => Hurray! End of my shift.
-                                   # =>  -------------------- 
+joe.work :drill, :hammer       # =>  OK. I'm working now.
+                               # =>  My tool: drill, hammer
+# some other code
+joe.rest                       # => Hurray! End of my shift.
+                               # =>  -------------------- 
+```
 
 ## Finite state machine definition and DSL keywords
 
@@ -121,17 +123,21 @@ and the FSM remains in the same state.
 Two aditional versions of `transitions_for` specification are supported, both without using the `do-end` block. 
 The transitions from the `Worker` class can be written in the following forms:
 
+```ruby
     transitions_for :resting,
       event(:work, :new => :working)
     transitions_for :working,
       event(:rest, :new => :resting)
+```
 
  or
 
+```ruby
     transitions_for :resting,
       {event => :work, :new => :working}
     transitions_for :working,
       {event => :rest, :new => :resting}
+```
 
 States specified as `:new` in any `transitions_for` statement are created if they are not explicitly defined using the state statement.
 However, if `:exit` and `:enter` actions for the state are required the state statement must be used. States specified in the fsm block will become available in
