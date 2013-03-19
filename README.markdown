@@ -16,7 +16,7 @@ or, if you use JRuby:
 
 You can read about SimpleFSM in our papers. PDF files are available at [this location](http://scholar.google.com/citations?user=7RoQiiQAAAAJ).
 
-SimpleFSM DSL can be used to model an FSM for any domain. The DSL was developed in order to support the following requirements:
+SimpleFSM DSL can be used to model an FSM for any domain. The main reason for SimpleFSM development is modeling SIP applications as FSMs. The DSL was developed in order to support the following requirements:
 
  - unlimited number of states can be used,
  - unlimited number of transitions can be specified,
