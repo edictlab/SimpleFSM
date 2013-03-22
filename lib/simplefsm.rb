@@ -76,7 +76,8 @@ module SimpleFSM
               trans = statetrans.select{|t| !t.select{|k, v| k==:event and v == ev}.empty?} 
 
               if trans and trans.size>0
-                trans_triggered = trans.select do |v| 
+                # The first transition that is triggered
+                index_triggered = trans.index do |v| 
                   # TODO: multiple guards (and, ...)
                   if v.has_key?(:guard)
                     send(v[:guard], args)
@@ -84,7 +85,10 @@ module SimpleFSM
                     true
                   end
                 end 
+                trans_triggered = trans[index_triggered]
+                new_state = trans_triggered[:new] if trans_triggered.has_key?(:new)
 
+=begin
                 trans_triggered.each do |a|
                   uniquestates << a[:new] if a.has_key?(:new)
                 end
@@ -97,30 +101,31 @@ module SimpleFSM
                 elsif numstates < 1
                   return
                 end
+=end
 
-                  #:do keyword => call proc for event
-                  doprocs = []
-                  trans_triggered.each do |a|
-                    next if !a.has_key?(:do) 
-                    if a[:do].class == Array
-                      doprocs.concat(a[:do]) 
-                    else
-                      doprocs << a[:do] 
-                    end
-                  end
-                  #doprocs.uniq!
+                #START of :action keyword => call procs for event
+                # :do keyword - is not prefered 
+                # because it confuses source code editors
+                action_keys = ['do'.to_sym, :action]
 
-                  doprocs.each {|p| send(p, args)} if doprocs.size > 0
-                  #end :do keyword
-
-                  do_transform uniquestates.first, args 
+                doprocs = []
+                action_keys.each do |key|
+                  doprocs << trans_triggered[key] if trans_triggered.has_key?(key)
                 end
+                doprocs.flatten!
+                #doprocs.uniq!
+
+                doprocs.each {|p| send(p, args)} if doprocs.size > 0
+                #END of :action keyword
+
+                do_transform new_state, args 
               end
+            end
             fsm_save_state args
           end
         end
       end
-              
+
 
       ### FSM keywords: state, transitions_for ###
 
@@ -207,7 +212,6 @@ module SimpleFSM
       # Add transition to state's transitions if it does not exist
       def self.add_transition st, t
           if !@@transitions[st].any? {|v| v == t}
-            # TODO: check if :do is an Array
             @@transitions[st] << t
             add_state_data t[:new]
           end

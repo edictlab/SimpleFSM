@@ -105,12 +105,11 @@ The initial state is the first state specified within the `fsm` block.
 
 ### Transitions
 
-FSM state transitions are defined within the
-`transitions_for` statement. The arbitrary number
-of transitions for any state can be specified using the
+FSM state transitions are defined within the `transitions_for` statement. 
+The arbitrary number of transitions for any state can be specified using the
 `event` statement.
 
-The FSM remains idle when an event is received which is not
+The FSM remains idle when a valid event is received which is not
 specified in the `transition_for` statement related to
 the current state.
 The following is the full list of parameters that the `event` specification accepts inside the `transition_for` statement:
@@ -118,7 +117,7 @@ The following is the full list of parameters that the `event` specification acce
 - `:new` specifies the destination state for the transition. The parameter is mandatory. If `:new` is `nil`, event is triggered but the transition is not performed
 and the FSM remains in the same state.
 - `:guard` specifies the Boolean function for checking the transition’s condition. The parameter is optional. The event is triggered and transition is performed only if this method returns true.
-- `:do` specifies the method to be called when the event is fired. This parameter is optional. If `:guard` is specified, then the `:do` method is called only if the `:guard` method returns `true`.
+- `:action` specifies the method or methods (specified in an array) to be called when the event is fired. This parameter is optional. If `:guard` is specified, then the `:action` method is called only if the `:guard` method returns `true`. It is possibe to use the keyword `:do` for this specification, but it is not prefered because it confuses source code editors.
 
 Two aditional versions of `transitions_for` specification are supported, both without using the `do-end` block. 
 The transitions from the `Worker` class can be written in the following forms:
@@ -140,9 +139,12 @@ The transitions from the `Worker` class can be written in the following forms:
 ```
 
 States specified as `:new` in any `transitions_for` statement are created if they are not explicitly defined using the state statement.
-However, if `:exit` and `:enter` actions for the state are required the state statement must be used. States specified in the fsm block will become available in
+However, if `:exit` and `:enter` actions for the state are required the `state` statement must be used. States specified in the fsm block will become available in
 the objects that are instances of the class with the `fsm` specification. For every event in the `fsm` block, an object will get a method with the same name, which
 can be used to generate the event.
+
+Only one transition in `transitions_for` specifications for the current state can be performed.
+When an event is invoked, the transitions for the current state are evaluated in the order they are specified inside the `fsm` specification. The first transition that is triggered on the event is then performed.
 
 ### Starting the machine
 
