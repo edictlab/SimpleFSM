@@ -15,7 +15,7 @@
 # License::   MIT License
 
 module SimpleFSM
-  VERSION = '0.1.3'
+  VERSION = '0.2.0'
 
   def initialize
     @state ||=  {}
@@ -54,6 +54,7 @@ module SimpleFSM
             fsm_prepare_state args
 
             if args
+              # If we have args here it must be an Array
               if args.class != Array
                 return
               end
@@ -71,42 +72,45 @@ module SimpleFSM
             uniquestates = []
 
             if statetrans
+              # All transitions for this event in the current state
               trans = statetrans.select{|t| !t.select{|k, v| k==:event and v == ev}.empty?} 
 
               if trans and trans.size>0
-                newstates = trans.select do |v| 
-                    if v.has_key?(:guard)
-                      send(v[:guard], args)
-                    else
-                      true
-                    end
-                  end 
-
-                  newstates.each do |a|
-                    uniquestates << a[:new] if a.has_key?(:new)
+                trans_triggered = trans.select do |v| 
+                  # TODO: multiple guards (and, ...)
+                  if v.has_key?(:guard)
+                    send(v[:guard], args)
+                  else
+                    true
                   end
-                  uniquestates.uniq!
-                  numstates = uniquestates.size
+                end 
 
-                  if numstates > 1
-                    raise "Error in transition (event #{ev}, state #{st}): More than 1 (#{numstates}) new state (#{uniquestates.inspect})."
-                    return
-                  elsif numstates < 1
-                    return
-                  end
+                trans_triggered.each do |a|
+                  uniquestates << a[:new] if a.has_key?(:new)
+                end
+                uniquestates.uniq!
+                numstates = uniquestates.size
+
+                if numstates > 1
+                  raise "Error in transition (event #{ev}, state #{st}): More than 1 (#{numstates}) new state (#{uniquestates.inspect})."
+                  return
+                elsif numstates < 1
+                  return
+                end
 
                   #:do keyword => call proc for event
                   doprocs = []
-                  newstates.each do |a|
-                    doprocs << a[:do] if a.has_key?(:do)
-                  end
-                  doprocs.uniq!
-
-                  if doprocs.size > 0
-                    doprocs.each do |p| 
-                      send(p, args)
+                  trans_triggered.each do |a|
+                    next if !a.has_key?(:do) 
+                    if a[:do].class == Array
+                      doprocs.concat(a[:do]) 
+                    else
+                      doprocs << a[:do] 
                     end
                   end
+                  #doprocs.uniq!
+
+                  doprocs.each {|p| send(p, args)} if doprocs.size > 0
                   #end :do keyword
 
                   do_transform uniquestates.first, args 
@@ -200,9 +204,10 @@ module SimpleFSM
 
       ## private class methods ######################
 
-      # add transition to state's transitions if it does not exist
+      # Add transition to state's transitions if it does not exist
       def self.add_transition st, t
           if !@@transitions[st].any? {|v| v == t}
+            # TODO: check if :do is an Array
             @@transitions[st] << t
             add_state_data t[:new]
           end
