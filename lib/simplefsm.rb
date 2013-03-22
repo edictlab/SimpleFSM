@@ -79,14 +79,19 @@ module SimpleFSM
                 # The first transition that is triggered
                 index_triggered = trans.index do |v| 
                   # TODO: multiple guards (and, ...)
+                  guards_and = []
                   if v.has_key?(:guard)
-                    send(v[:guard], args)
+                    guards_and << v[:guard]
+                    guards_and.flatten!
+                    guards_and.all? {|g| send(g, args) }
                   else
                     true
                   end
+
                 end 
-                trans_triggered = trans[index_triggered]
-                new_state = trans_triggered[:new] if trans_triggered.has_key?(:new)
+                if index_triggered
+                  trans_triggered = trans[index_triggered] 
+                  new_state = trans_triggered[:new] if trans_triggered.has_key?(:new)
 
 =begin
                 trans_triggered.each do |a|
@@ -103,22 +108,23 @@ module SimpleFSM
                 end
 =end
 
-                #START of :action keyword => call procs for event
-                # :do keyword - is not prefered 
-                # because it confuses source code editors
-                action_keys = ['do'.to_sym, :action]
+                  #START of :action keyword => call procs for event
+                  # :do keyword - is not prefered 
+                  # because it confuses source code editors
+                  action_keys = ['do'.to_sym, :action]
 
-                doprocs = []
-                action_keys.each do |key|
-                  doprocs << trans_triggered[key] if trans_triggered.has_key?(key)
+                  doprocs = []
+                  action_keys.each do |key|
+                    doprocs << trans_triggered[key] if trans_triggered.has_key?(key)
+                  end
+                  doprocs.flatten!
+                  #doprocs.uniq!
+
+                  doprocs.each {|p| send(p, args)} if doprocs.size > 0
+                  #END of :action keyword
+
+                  do_transform new_state, args 
                 end
-                doprocs.flatten!
-                #doprocs.uniq!
-
-                doprocs.each {|p| send(p, args)} if doprocs.size > 0
-                #END of :action keyword
-
-                do_transform new_state, args 
               end
             end
             fsm_save_state args
