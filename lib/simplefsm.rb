@@ -78,35 +78,37 @@ module SimpleFSM
               if trans and trans.size>0
                 # The first transition that is triggered
                 index_triggered = trans.index do |v| 
-                  # TODO: multiple guards (and, ...)
+                  # Guard specifiers:
+                  # :guard      - all must be true
+                  # :guard_not  - all must be false
+                  # :guard_or   - at least one must be true
+                  # All guard specified specifiers must evaluate to true
+                  # in order for transition to be triggered.
+                  guard_all = true
                   guards_and = []
+                  guards_or = []
+                  guards_not = []
                   if v.has_key?(:guard)
                     guards_and << v[:guard]
                     guards_and.flatten!
-                    guards_and.all? {|g| send(g, args) }
-                  else
-                    true
+                  end
+                  if v.has_key?(:guard_or)
+                    guards_or << v[:guard_or]
+                    guards_or.flatten!
+                  end
+                  if v.has_key?(:guard_not)
+                    guards_not << v[:guard_not]
+                    guards_not.flatten!
                   end
 
+                  guard_all &&= guards_and.all?   {|g| send(g, args) } if guards_and.size > 0
+                  guard_all &&= guards_or.any?    {|g| send(g, args) } if guards_or.size > 0
+                  guard_all &&= !guards_not.any?  {|g| send(g, args) } if guards_not.size > 0
+                  guard_all
                 end 
                 if index_triggered
                   trans_triggered = trans[index_triggered] 
                   new_state = trans_triggered[:new] if trans_triggered.has_key?(:new)
-
-=begin
-                trans_triggered.each do |a|
-                  uniquestates << a[:new] if a.has_key?(:new)
-                end
-                uniquestates.uniq!
-                numstates = uniquestates.size
-
-                if numstates > 1
-                  raise "Error in transition (event #{ev}, state #{st}): More than 1 (#{numstates}) new state (#{uniquestates.inspect})."
-                  return
-                elsif numstates < 1
-                  return
-                end
-=end
 
                   #START of :action keyword => call procs for event
                   # :do keyword - is not prefered 
@@ -118,7 +120,6 @@ module SimpleFSM
                     doprocs << trans_triggered[key] if trans_triggered.has_key?(key)
                   end
                   doprocs.flatten!
-                  #doprocs.uniq!
 
                   doprocs.each {|p| send(p, args)} if doprocs.size > 0
                   #END of :action keyword
