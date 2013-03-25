@@ -116,7 +116,11 @@ The following is the full list of parameters that the `event` specification acce
 
 - `:new` specifies the destination state for the transition. The parameter is mandatory. If `:new` is `nil`, event is triggered but the transition is not performed
 and the FSM remains in the same state.
-- `:guard` specifies the Boolean function for checking the transition’s condition. The parameter is optional. The event is triggered and transition is performed only if this method returns true.
+- `:guard`, `:guard_or` and `:guard_not` specifies the Boolean function or functions for checking the transition’s condition. The parameters are optional. Two or more Boolean functions are specified in an Array. The event is triggered and transition is performed only if all specified guard specifiers evaluate to true.   
+    - `:guard` evaluates to `true` only if all specified functions return `true`, example: `:guard => [:is_REGISTER_request?, :another_condition]`
+    - `:guard_or` evaluates to `true` if at least one of these functions return `true`, example: `:guard_or => [:condition1?, :condition2, :condition3]`
+    - `:guard_not` evaluates to true if all of these functions return `false`, example: `:guard_not => :valid_user?`
+
 - `:action` specifies the method or methods (specified in an array) to be called when the event is fired. This parameter is optional. If `:guard` is specified, then the `:action` method is called only if the `:guard` method returns `true`. It is possibe to use the keyword `:do` for this specification, but it is not prefered because it confuses source code editors.
 
 Two aditional versions of `transitions_for` specification are supported, both without using the `do-end` block. 
@@ -142,6 +146,8 @@ States specified as `:new` in any `transitions_for` statement are created if the
 However, if `:exit` and `:enter` actions for the state are required the `state` statement must be used. States specified in the fsm block will become available in
 the objects that are instances of the class with the `fsm` specification. For every event in the `fsm` block, an object will get a method with the same name, which
 can be used to generate the event.
+
+Only
 
 Only one transition in `transitions_for` specifications for the current state can be performed.
 When an event is invoked, the transitions for the current state are evaluated in the order they are specified inside the `fsm` specification. The first transition that is triggered on the event is then performed.
