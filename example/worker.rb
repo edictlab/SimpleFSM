@@ -11,12 +11,12 @@ class Worker
       :exit => :check_out
 
     transitions_for :resting do
-      event :work, :new => :working, :do => [:hello, :hello, :hello]
+      event :work, :new => :working
 
     end
 
     transitions_for :working do
-      event :rest, :new => :resting, :do => [:hello, :hello]
+      event :rest, :new => :resting
     end
   end
 
@@ -31,9 +31,6 @@ class Worker
     puts " --------------------"
   end
 
-  def hello(args)
-    puts "Hello! #{args.join(' ')}"
-  end
 end
 
 
@@ -41,9 +38,8 @@ joe = Worker.new
 joe.run
 joe.work :hammer
 # some code
-joe.rest 4, 5, "ddd"
+joe.rest 
 joe.work :drill, :hammer
 # some code
 joe.rest
 joe.work
-puts joe.state
