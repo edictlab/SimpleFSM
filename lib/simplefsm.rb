@@ -18,15 +18,17 @@ module SimpleFSM
   VERSION = '0.2.1'
 
   def initialize
-    current_state ||=  {}
+    self.current_state =  {}
     super
   end
 
   # start the machine
   def run 
-    current_state = @@states.first
+    # p "run #{@@states}"
+    # p "  fs: #{@@states.first}"
+    self.current_state= @@states.first
     if current_state[:on]
-      send(current_state[:on][:enter], nil) if current_state[:on].has_key?(:enter)
+      self.send(current_state[:on][:enter], nil) if current_state[:on].has_key?(:enter)
     end
   end
 
@@ -97,9 +99,9 @@ module SimpleFSM
                   end
 
                   # TODO: think again about those guards
-                  guard_all &&= guards_and.all?   {|g| send(g, args) } if guards_and.size > 0
-                  guard_all &&= guards_or.any?    {|g| send(g, args) } if guards_or.size > 0
-                  guard_all &&= !guards_not.any?  {|g| send(g, args) } if guards_not.size > 0
+                  guard_all &&= guards_and.all?   {|g| self.send(g, args) } if guards_and.size > 0
+                  guard_all &&= guards_or.any?    {|g| self.send(g, args) } if guards_or.size > 0
+                  guard_all &&= !guards_not.any?  {|g| self.send(g, args) } if guards_not.size > 0
                   guard_all
                 end 
                 if index_triggered
@@ -118,7 +120,7 @@ module SimpleFSM
                   end
                   doprocs.flatten!
 
-                  doprocs.each {|p| send(p, args)} if doprocs.size > 0
+                  doprocs.each {|p| self.send(p, args)} if doprocs.size > 0
                   #END of :action keyword
 
                   do_transform new_state, args 
@@ -157,53 +159,30 @@ module SimpleFSM
         #add state in case it haven't been defined
         add_state_data sname 
 
-        erroneous_trans = trans.select{|a| !a.has_key?(:event) or !a.has_key?(:new)}
-
-        if !erroneous_trans.empty? 
-          raise "Error in transitions for :#{sname}." +
-              "Transition MUST contain keys :event and :new.\n" + 
-              "In: " + erroneous_trans.inspect
-              return
-        end
+        trans.each{ |t| check_transition sname, t }
 
         trans.each do |t|
-          if t.class != Hash 
-            raise "Error in transitions for :#{sname} in \'#{t.inspect}\'." +
-              "Transition must be a Hash Array."
-            return
-          end
-
           add_transition sname, t
-
           @@events << t[:event] if !@@events.any? { |e| t[:event] == e }
         end
 
         # if events block is given
         if block_given?
           @@current_state_setup = sname
-          yield
+          yield 
           @@current_state_setup = nil
         end
 
       end
 
       # the event keyword 
-      def self.event ev, args
-        if !args or !args.is_a?(Hash)
-          raise "Error in event description for event: #{ev}." +
-              "Transition MUST be a Hash and at least MUST contain key :new.\n"  
-              return
-
-        end
-        if !args.has_key?(:new) 
-          raise "Error in transitions for :#{sname}." +
-              "Transition MUST contain keys :event and :new.\n" + 
-              "In: " + erroneous_trans.inspect
-              return
-        end
-
+      def self.event ev, args, &block
+        puts "! EVENT State is #{block.call}" if block_given?
+        
         t = {:event => ev}.merge!(args)
+        check_transition @@current_state_setup, t
 
+        # TODO: try to simplify this!
         if !@@current_state_setup
           t
         else
@@ -213,10 +192,25 @@ module SimpleFSM
 
       ## private class methods ######################
 
+      # Check whether given transitin is valid
+      def self.check_transition st, tran
+        ev = tran[:event] if tran.is_a?(Hash) and tran.has_key?(:event) 
+        ev ||= "unknown"
+
+        if !tran or !tran.is_a?(Hash) or !tran.has_key?(:event) 
+          raise "Error in transition specification for event '#{ev}' of state '#{st}'.\n " +
+              "Transition MUST be a Hash and at least MUST contain keywords 'event' and 'new'.\n"  +
+              "Transition data: #{tran}.\n"
+              return
+        end
+
+      end
+
       # Add transition to state's transitions if it does not exist
       def self.add_transition st, t
           if !@@transitions[st].any? {|v| v == t}
             @@transitions[st] << t
+            #add the state to @@states if it does not exist 
             add_state_data t[:new]
           end
 
@@ -236,7 +230,6 @@ module SimpleFSM
 
 
       private_class_method :fsm, :state, :transitions_for, :event
-
       private_class_method :add_state_data, :add_transition
 
     end
@@ -261,9 +254,9 @@ module SimpleFSM
       onenter = newstate[:on][:enter] if newstate[:on].has_key?(:enter)
     end
 
-    send(onexit, args) if onexit
-    current_state = newstate
-    send(onenter, args) if onenter
+    self.send(onexit, args) if onexit
+    self.current_state = newstate
+    self.send(onenter, args) if onenter
   end
 
   def fsm_responds_to? ev
@@ -286,6 +279,8 @@ module SimpleFSM
     ev
   end
 
+  # PLEASE OVERRIDE  !
+  # ################################################################### 
   # The following methods should be overriden according to the application.
   #
   # They are called when any event is fired in order 
@@ -300,10 +295,12 @@ module SimpleFSM
   # get the current FSM state name
   
   def current_state
-    return @state
+    # p "get current_state #{@state}"
+    @state
   end
 
-  def current_state= st
+  def current_state= (st)
+    # p "set current_state #{st}"
     @state = st
   end
 
@@ -319,7 +316,8 @@ module SimpleFSM
     current_state
   end
 
-  public :current_state, :current_state=
+  public :state
+  private :current_state, :current_state=
   private :fsm_prepare_state, :fsm_save_state
 
 end
