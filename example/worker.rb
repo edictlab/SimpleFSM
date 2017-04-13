@@ -24,8 +24,8 @@ class Worker
     end
 
     transitions_for :working,
-      event: :rest , 
-      :new => :resting
+      event(:rest , 
+      :new => :resting)
 
     # transitions_for :working do
     #   event :rest, :new => :resting
