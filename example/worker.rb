@@ -1,5 +1,5 @@
 require 'rubygems'
-require 'simplefsm'
+require '../lib/simplefsm'
 
 class Worker
   include SimpleFSM

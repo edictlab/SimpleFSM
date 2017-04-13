@@ -12,27 +12,22 @@
 # after the fsm keyword.
 #
 # Authors:: Edin Pjanic (mailto:edin.pjanic@untz.com), Amer Hasanovic (mailto:amer.hasanovic@untz.com)
-# License::   MIT License
+# License:: MIT License
 
 module SimpleFSM
-  VERSION = '0.2.0'
+  VERSION = '0.2.1'
 
   def initialize
-    @state ||=  {}
+    current_state ||=  {}
     super
   end
 
   # start the machine
   def run 
-    @state = @@states.first
-    if @state[:on]
-      send(@state[:on][:enter], nil) if @state[:on].has_key?(:enter)
+    current_state = @@states.first
+    if current_state[:on]
+      send(current_state[:on][:enter], nil) if current_state[:on].has_key?(:enter)
     end
-  end
-
-  # get the current FSM state name
-  def state
-    @state[:state] #.to_sym
   end
 
   # injecting the class methods for FSM definition
@@ -62,10 +57,10 @@ module SimpleFSM
               args = []
             end
 
-            if @state.class == Hash
-              st = @state[:state]
+            if current_state.class == Hash
+              st = current_state[:state]
             else
-              st = @state
+              st = current_state
             end
 
             statetrans = @@transitions[st]
@@ -76,7 +71,7 @@ module SimpleFSM
               trans = statetrans.select{|t| !t.select{|k, v| k==:event and v == ev}.empty?} 
 
               if trans and trans.size>0
-                # The first transition that is triggered
+                # Index of the first transition that is triggered
                 index_triggered = trans.index do |v| 
                   # Guard specifiers:
                   # :guard      - all must be true
@@ -101,6 +96,7 @@ module SimpleFSM
                     guards_not.flatten!
                   end
 
+                  # TODO: think again about those guards
                   guard_all &&= guards_and.all?   {|g| send(g, args) } if guards_and.size > 0
                   guard_all &&= guards_or.any?    {|g| send(g, args) } if guards_or.size > 0
                   guard_all &&= !guards_not.any?  {|g| send(g, args) } if guards_not.size > 0
@@ -110,7 +106,8 @@ module SimpleFSM
                   trans_triggered = trans[index_triggered] 
                   new_state = trans_triggered[:new] if trans_triggered.has_key?(:new)
 
-                  #START of :action keyword => call procs for event
+                  #START of :action keyword 
+                  # Call procs for the current event
                   # :do keyword - is not prefered 
                   # because it confuses source code editors
                   action_keys = ['do'.to_sym, :action]
@@ -259,13 +256,13 @@ module SimpleFSM
       return
     end
 
-    onexit = @state[:on][:exit] if @state.has_key?(:on) and @state[:on] and @state[:on].has_key?(:exit)
+    onexit = current_state[:on][:exit] if current_state.has_key?(:on) and current_state[:on] and current_state[:on].has_key?(:exit)
     if newstate[:on]
       onenter = newstate[:on][:enter] if newstate[:on].has_key?(:enter)
     end
 
     send(onexit, args) if onexit
-    @state = newstate
+    current_state = newstate
     send(onenter, args) if onenter
   end
 
@@ -281,15 +278,12 @@ module SimpleFSM
     get_state_events(st).any?{|e| e == ev}
   end
 
-  def get_state_events state
+  def get_state_events st
     ev = []
-    tr = @@transitions[state[:state]]
-    if tr 
-      ts = tr.each{|t| ev << t[:event]}
-      ev.uniq
-    else
-      []
-    end
+    tr = @@transitions[st[:state]]
+    ev << tr.map{|tran| tran[:event]} if tr
+    ev.uniq!
+    ev
   end
 
   # The following methods should be overriden according to the application.
@@ -298,14 +292,34 @@ module SimpleFSM
   # to perform state loading/saving if the state is saved in
   # an external database or similar facility.
   #
+  # state_full is a private method that returns a full state object
+  # state is a public method that returns only the sate's name
   # fsm_prepare_state method is called before and
   # fsm_save_state method is called after
   # actual state transition and all consequent actions. 
+  # get the current FSM state name
+  
+  def current_state
+    return @state
+  end
+
+  def current_state= st
+    @state = st
+  end
+
+  def state
+    current_state[:state] #.to_sym
+  end
+
   def fsm_prepare_state args
-    @state
+    current_state
   end
 
   def fsm_save_state args
-    @state
+    current_state
   end
+
+  public :current_state, :current_state=
+  private :fsm_prepare_state, :fsm_save_state
+
 end
