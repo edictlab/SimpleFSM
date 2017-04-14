@@ -17,18 +17,20 @@
 module SimpleFSM
   VERSION = '0.2.1'
 
-  # SingletonEvent instance is a temporary helper object 
-  # for adding transitions for a given state
-  class SingletonEvent
-    def initialize st, cl
-      @state = st
-      @clas = cl
+  # TransitionFactory instance is a temporary helper object 
+  # for making transitions from a transitions_for code block parameter
+  class TransitionFactory
+    def initialize 
+      @transitions = []
     end
 
     def event ev, args
       t = {:event => ev}.merge!(args)
-      @clas.check_transition t, @state
-      @clas.add_transition @state, t
+      @transitions << t
+    end
+
+    def transitions
+      @transitions
     end
   end
 
@@ -173,15 +175,16 @@ module SimpleFSM
         add_state_data sname 
 
         if block_given?
-          te = SingletonEvent.new sname, self #self is the host class
-          te.send :define_singleton_method, :yield_block,  &block
-          te.yield_block
+          tf = TransitionFactory.new 
+          tf.send :define_singleton_method, :yield_block,  &block
+          tf.yield_block
+          trans << tf.transitions
+          trans.flatten!
         end
-
         trans.each{ |t| check_transition t, sname }
 
         trans.each do |t|
-          add_transition sname, t
+          add_transition t, sname
           @@events << t[:event] if !@@events.any? { |e| t[:event] == e }
         end
 
@@ -190,11 +193,10 @@ module SimpleFSM
       # event keyword 
       # returns transition that is to be added inside transitions_for method
       def self.event ev, args #, &block
-        t = {:event => ev}.merge!(args)
-        check_transition t #@@current_state_setup, t
-        t
+        return {:event => ev}.merge!(args)
       end
 
+      ## Private class methods ######################
       # Check whether given transition is valid
       def self.check_transition tran, st='unknown'
         ev = tran[:event] if tran.is_a?(Hash) and tran.has_key?(:event) 
@@ -202,15 +204,15 @@ module SimpleFSM
 
         if !tran or !tran.is_a?(Hash) or !tran.has_key?(:event) or !tran.has_key?(:new) 
 
-          raise "Error in transition specification for event '#{ev}' of state '#{st}'.\n " +
-              "Transition MUST be a Hash and at least MUST contain keywords 'event' and 'new'.\n"  +
-              "Transition data: #{tran}.\n"
+          raise "Error in transition specification for event '#{ev}' of state '#{st}'.\n" +
+              "\t-> Transition MUST be a Hash and at least MUST contain both keywords 'event' and 'new'.\n"  +
+              "\t-> Transition data: #{tran}.\n"
               return
         end
       end
 
       # Add transition to state's transitions if it does not exist
-      def self.add_transition st, t
+      def self.add_transition t, st
           if !@@transitions[st].any? {|v| v == t}
             @@transitions[st] << t
 
@@ -221,7 +223,6 @@ module SimpleFSM
           @@events << t[:event] if !@@events.any? { |e| t[:event] == e }
       end
       
-      ## private class methods ######################
 
       def self.add_state_data sname, data={:on=>nil}, overwrite=false
         return if !sname
@@ -235,16 +236,18 @@ module SimpleFSM
       end
 
       private_class_method :fsm, :state, :transitions_for, :event
-      private_class_method :add_state_data #, :add_transition
+      private_class_method :add_state_data , :add_transition, :check_transition
+
 
     end
   end
 
+  # Private instance methods
   private
 
   # perform transition from current to the next state
   def do_transform sname, args
-    # if new state is nil => don't change state
+    # if new state is nil then don't change state
     return if !sname
 
     symname = sname.to_sym
@@ -254,7 +257,7 @@ module SimpleFSM
       return
     end
 
-    onexit, onenter = nil, nil
+    # onexit, onenter = nil, nil
     onexit = current_state[:on][:exit] if current_state.has_key?(:on) and current_state[:on] and current_state[:on].has_key?(:exit)
     if newstate[:on]
       onenter = newstate[:on][:enter] if newstate[:on].has_key?(:enter)
@@ -290,14 +293,13 @@ module SimpleFSM
   # The following methods should be overriden according to the application.
   #
   # They are called when any event is fired in order 
-  # to perform state loading/saving if the state is saved in
+  # to perform state loading/saving in case state is saved in
   # an external database or similar facility.
   #
   # #current_state is a private accessor that returns a full state object
   # #state is a public method that returns only the sate's name
   # #fsm_prepare_state method is called before and
-  # #fsm_save_state method is called after
-  #     actual state transition and all consequent actions. 
+  # #fsm_save_state method is called after actual state transition and all consequent actions. 
   
   def current_state
     @state
