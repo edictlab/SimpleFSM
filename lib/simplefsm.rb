@@ -1,6 +1,5 @@
 # SimpleFSM - a DSL for finite state machines
 #
-# 
 # This module provides a domain specific language (DSL) that 
 # can be used to model a finite state machine (FSM) for any domain, 
 # including complex communication applications 
