@@ -161,16 +161,17 @@ The first transition that is triggered on the event is then performed.
 
 ### Injected methods and variables 
 
-Including the `SimpleFSM` module injects the following methods and variables into the destination class. 
+When `SimpleFSM` module is included into the Ruby class the following class, methods and variables are injected into the destination class. 
+They are necessary for a proper functioning of this DSL.
 
 #### Class and instance methods
 The following methods should not be overriden:
-- public instance methods: `run`
+- public instance method: `run`
 - private instance methods: `do_transform`, `fsm_responds_to?`, `fsm_state_responds_to?`, `get_state_events` 
 - private class methods: `fsm`, `state`, `transitions_for`, `event`, `add_state_data`, `add_transition`
 
 The following methods should be overriden in case the state is saved in the external database or similar facility:
-- public instance methods: `state`
+- public instance method: `state`
 - private instance methods: `current_state`, `set_current_state`
 
 #### Variables
@@ -178,8 +179,8 @@ The following methods should be overriden in case the state is saved in the exte
 - instance variable: `@state` 
 - class variables: `@@states`, `@@events`, `@@transitions`
 
-The variable `@state` keeps the current state of the machine and is referenced only within methods `state`, `current_state` and `set_current_state`. 
-If the current state of the machine is kept in external database then the aforementioned methods should be overriden and variable `@state` is probably unnecessary.
+Variable `@state` keeps the current state of the machine and is referenced only within methods `state`, `current_state` and `set_current_state`. 
+If the current state of the machine is kept in an external database then the aforementioned methods should be overriden and variable `@state` is probably unnecessary.
 
 
 
