@@ -1,3 +1,5 @@
+[![Gem Version](https://badge.fury.io/rb/simplefsm.svg)](https://badge.fury.io/rb/simplefsm)
+
 # SimpleFSM
 
 A simple and lightweight domain specific language (DSL) for modeling finite state machines (FSM).

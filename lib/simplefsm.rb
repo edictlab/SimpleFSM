@@ -84,7 +84,6 @@ module SimpleFSM
             end
 
             statetrans = @@transitions[st]
-            # uniquestates = []
 
             if statetrans
               # Get all transitions for this event in the current state
