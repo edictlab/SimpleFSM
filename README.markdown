@@ -159,19 +159,27 @@ The first transition that is triggered on the event is then performed.
 
 ## Remarks
 
-### Injected methods and variables
+### Injected methods and variables 
 
-Including the `SimpleFSM` module injects the following methods and variables into the destination class. Do not redefine them!
+Including the `SimpleFSM` module injects the following methods and variables into the destination class. 
 
 #### Class and instance methods
-- public instance methods: `run`, `state`
+The following methods should not be overriden:
+- public instance methods: `run`
 - private instance methods: `do_transform`, `fsm_responds_to?`, `fsm_state_responds_to?`, `get_state_events` 
 - private class methods: `fsm`, `state`, `transitions_for`, `event`, `add_state_data`, `add_transition`
 
+The following methods should be overriden in case the state is saved in the external database or similar facility:
+- public instance methods: `state`
+- private instance methods: `current_state`, `set_current_state`
+
 #### Variables
 
-- instance variable: `@state`
-- class variables: `@@states`, `@@events`, `@@transitions`, `@@current_state_setup`
+- instance variable: `@state` 
+- class variables: `@@states`, `@@events`, `@@transitions`
+
+The variable `@state` keeps the current state of the machine and is referenced only within methods `state`, `current_state` and `set_current_state`. 
+If the current state of the machine is kept in external database then the aforementioned methods should be overriden and variable `@state` is probably unnecessary.
 
 
 
