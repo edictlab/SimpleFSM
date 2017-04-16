@@ -161,7 +161,7 @@ The first transition that is triggered on the event is then performed.
 
 ### Injected methods and variables 
 
-When `SimpleFSM` module is included into the Ruby class the following class, methods and variables are injected into the destination class. 
+When `SimpleFSM` module is included into a Ruby class the following class, methods and variables are injected into it (into the destination class). 
 They are necessary for a proper functioning of this DSL.
 
 #### Class and instance methods
