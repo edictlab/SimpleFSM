@@ -119,7 +119,7 @@ The following is the full list of parameters that the `event` specification acce
 - `:new` specifies the destination state for the transition. The parameter is mandatory. If `:new` is `nil`, event is triggered but the transition is not performed
 and the FSM remains in the same state.
 - `:guard`, `:guard_or` and `:guard_not` specifies the Boolean function or functions for checking the transition’s condition. The parameters are optional. Two or more Boolean functions are specified in an Array. The event is triggered and transition is performed only if all specified guard specifiers evaluate to true.   
-    - `:guard` evaluates to `true` only if all specified functions return `true`, example: `:guard => [:is_REGISTER_request?, :another_condition]`
+    - `:guard` evaluates to `true` only if all specified functions return `true`, example: `:guard => [:is_REGISTER?, :another_condition]`
     - `:guard_or` evaluates to `true` if at least one of these functions return `true`, example: `:guard_or => [:condition1?, :condition2, :condition3]`
     - `:guard_not` evaluates to true if all of these functions return `false`, example: `:guard_not => :valid_user?`
 
@@ -149,10 +149,9 @@ However, if `:exit` and `:enter` actions for the state are required the `state` 
 the objects that are instances of the class with the `fsm` specification. For every event in the `fsm` block, an object will get a method with the same name, which
 can be used to generate the event.
 
-Only
-
 Only one transition in `transitions_for` specifications for the current state can be performed.
-When an event is invoked, the transitions for the current state are evaluated in the order they are specified inside the `fsm` specification. The first transition that is triggered on the event is then performed.
+When an event is invoked, the transitions for the current state are evaluated in the order they are specified inside the `fsm` specification. 
+The first transition that is triggered on the event is then performed.
 
 ### Starting the machine
 
@@ -166,24 +165,14 @@ Including the `SimpleFSM` module injects the following methods and variables int
 
 #### Class and instance methods
 - public instance methods: `run`, `state`
-- private instance methods: `do_transform`, `fsm_responds_to?`, `fsm_state_responds_to?`, `get_state_events`, `fsm_prepare_state`, `fsm_save_state`
+- private instance methods: `do_transform`, `fsm_responds_to?`, `fsm_state_responds_to?`, `get_state_events` 
 - private class methods: `fsm`, `state`, `transitions_for`, `event`, `add_state_data`, `add_transition`
 
 #### Variables
 
 - instance variable: `@state`
 - class variables: `@@states`, `@@events`, `@@transitions`, `@@current_state_setup`
-### Other remarks
 
-Private instance methods `fsm_prepare_state` and `fsm_save_state` are called by the SimpleFSM facility when any event is fired.
-
-`fsm_prepare_state` method is called before and
-`fsm_save_state` method is called after actual state transition and all consequent actions. 
-
-The purpose of them is to perform state loading/saving if the state is saved in an external database or similar facility. In that case, they
-should be overriden according to the application. 
-
-As an example, in `SipFSM`, a gem for fast SIP application development based on `SimpleFSM`, those methods are overriden so that states for all calls are saved in corresonding Java SIP Application Session objects inside SIP servlet container.
 
 
 
