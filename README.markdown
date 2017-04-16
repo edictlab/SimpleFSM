@@ -164,6 +164,9 @@ The first transition that is triggered on the event is then performed.
 When `SimpleFSM` module is included into a Ruby class the following class, methods and variables are injected into it (into the destination class). 
 They are necessary for a proper functioning of this DSL.
 
+#### A class 
+Objects of `TransitionFactory` class are used for making transitions specified in `event` clauses that are inside `transitions_for` code blocks.
+
 #### Class and instance methods
 The following methods should not be overriden:
 - public instance method: `run`
