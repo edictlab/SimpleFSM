@@ -12,7 +12,6 @@ class Worker
 
     transitions_for :resting do
       event :work, :new => :working
-
     end
 
     transitions_for :working do
