@@ -165,7 +165,8 @@ When `SimpleFSM` module is included into a Ruby class the following class, metho
 They are necessary for a proper functioning of this DSL.
 
 #### A class 
-Objects of `TransitionFactory` class are used for making transitions specified in `event` clauses that are inside `transitions_for` code blocks.
+Objects that are instances of `TransitionFactory` class are used for making transitions specified in `event` clauses within `transitions_for` code blocks.
+User code should not utilize this class.
 
 #### Class and instance methods
 The following methods should not be overriden:
