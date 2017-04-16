@@ -14,7 +14,7 @@
 # License:: MIT License
 
 module SimpleFSM
-  VERSION = '0.2.1'
+  VERSION = '0.2.3'
 
   # TransitionFactory instance is a temporary helper object 
   # for making transitions from a transitions_for code block parameter
@@ -35,16 +35,22 @@ module SimpleFSM
 
   #Instance and class methods that are to be injected to the host class
   def initialize
-    self.current_state =  {}
+    # set_current_state nil
+    # self.set_current_state  {}
     super
   end
 
-  # start the machine
-  def run 
-    self.current_state= @@states.first
-    if current_state[:on]
-      self.send(current_state[:on][:enter], nil) if current_state[:on].has_key?(:enter)
+  # start the machine only if it hasn't been started
+  def run  *args
+    st = current_state args
+    if !st
+      st = @@states.first
+      if st[:on]
+        self.send(st[:on][:enter], args) if st[:on].has_key?(:enter)
+      end
+      set_current_state(st, args)
     end
+    st
   end
 
   # injecting the class methods for FSM definition
@@ -61,7 +67,6 @@ module SimpleFSM
         # - one method is defined for every event specified
         @@events.each do |ev|
           Kernel.send :define_method, ev do |*args|
-            fsm_prepare_state args
 
             if args
               # If we have args here it must be an Array
@@ -72,14 +77,14 @@ module SimpleFSM
               args = []
             end
 
-            if current_state.class == Hash
-              st = current_state[:state]
+            if current_state(args).class == Hash
+              st = current_state(args)[:state]
             else
-              st = current_state
+              st = current_state(args)
             end
 
             statetrans = @@transitions[st]
-            uniquestates = []
+            # uniquestates = []
 
             if statetrans
               # Get all transitions for this event in the current state
@@ -141,7 +146,6 @@ module SimpleFSM
                 end
               end
             end
-            fsm_save_state args
           end
         end
       end
@@ -257,13 +261,13 @@ module SimpleFSM
     end
 
     # onexit, onenter = nil, nil
-    onexit = current_state[:on][:exit] if current_state.has_key?(:on) and current_state[:on] and current_state[:on].has_key?(:exit)
+    onexit = current_state(args)[:on][:exit] if current_state(args).has_key?(:on) and current_state(args)[:on] and current_state(args)[:on].has_key?(:exit)
     if newstate[:on]
       onenter = newstate[:on][:enter] if newstate[:on].has_key?(:enter)
     end
 
     self.send(onexit, args) if onexit
-    self.current_state = newstate
+    set_current_state newstate, args
     self.send(onenter, args) if onenter
   end
 
@@ -283,7 +287,7 @@ module SimpleFSM
     ev = []
     tr = @@transitions[st[:state]]
     ev << tr.map{|tran| tran[:event]} if tr
-    ev.uniq!
+    ev.flatten!.uniq!
     ev
   end
 
@@ -297,31 +301,20 @@ module SimpleFSM
   #
   # #current_state is a private accessor that returns a full state object
   # #state is a public method that returns only the sate's name
-  # #fsm_prepare_state method is called before and
-  # #fsm_save_state method is called after actual state transition and all consequent actions. 
   
-  def current_state
+  def current_state *args
     @state
   end
 
-  def current_state= (st)
+  def set_current_state(st, *args)
     @state = st
   end
 
-  def state
-    current_state[:state] #.to_sym
-  end
-
-  def fsm_prepare_state args
-    current_state
-  end
-
-  def fsm_save_state args
-    current_state
+  def state *args
+    current_state(args)[:state] #.to_sym
   end
 
   public :state
-  private :current_state, :current_state=
-  private :fsm_prepare_state, :fsm_save_state
+  private :current_state, :set_current_state
 
 end

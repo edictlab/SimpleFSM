@@ -2,8 +2,8 @@
   
 Gem::Specification.new do |s|
   s.name        = 'simplefsm'
-  s.version     = '0.2.1'
-  s.date        = '2017-04-16'
+  s.version     = '0.2.3'
+  s.date        = '2017-04-17'
   s.summary     = "SimpleFSM - a Ruby DSL for FSMs"
   s.description = "A simple and lightweight domain specific language (DSL) for modeling finite state machines (FSM)."
   s.authors     = ["Edin Pjanic", "Amer Hasanovic"]
