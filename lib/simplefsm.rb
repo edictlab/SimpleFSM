@@ -14,7 +14,7 @@
 # License:: MIT License
 
 module SimpleFSM
-  VERSION = '0.2.1'
+  VERSION = '0.2.3'
 
   # TransitionFactory instance is a temporary helper object 
   # for making transitions from a transitions_for code block parameter
@@ -35,12 +35,12 @@ module SimpleFSM
 
   #Instance and class methods that are to be injected to the host class
   def initialize
-    set_current_state nil
+    # set_current_state nil
     # self.set_current_state  {}
     super
   end
 
-  # start the machine
+  # start the machine only if it hasn't been started
   def run  *args
     st = current_state args
     if !st
@@ -50,6 +50,7 @@ module SimpleFSM
       end
       set_current_state(st, args)
     end
+    st
   end
 
   # injecting the class methods for FSM definition
@@ -83,7 +84,7 @@ module SimpleFSM
             end
 
             statetrans = @@transitions[st]
-            uniquestates = []
+            # uniquestates = []
 
             if statetrans
               # Get all transitions for this event in the current state
@@ -260,7 +261,7 @@ module SimpleFSM
     end
 
     # onexit, onenter = nil, nil
-    onexit = current_state(args)[:on][:exit] if current_state(args).has_key?(:on) and current_state[:on] and current_state[:on].has_key?(:exit)
+    onexit = current_state(args)[:on][:exit] if current_state(args).has_key?(:on) and current_state(args)[:on] and current_state(args)[:on].has_key?(:exit)
     if newstate[:on]
       onenter = newstate[:on][:enter] if newstate[:on].has_key?(:enter)
     end
@@ -286,7 +287,7 @@ module SimpleFSM
     ev = []
     tr = @@transitions[st[:state]]
     ev << tr.map{|tran| tran[:event]} if tr
-    ev.uniq!
+    ev.flatten!.uniq!
     ev
   end
 
@@ -310,7 +311,7 @@ module SimpleFSM
   end
 
   def state *args
-    current_state[:state] #.to_sym
+    current_state(args)[:state] #.to_sym
   end
 
   public :state
