@@ -14,7 +14,7 @@
 # License:: MIT License
 
 module SimpleFSM
-  VERSION = '0.2.3'
+  VERSION = '0.2.4'
 
   # TransitionFactory instance is a temporary helper object 
   # for making transitions from a transitions_for code block parameter
@@ -142,9 +142,11 @@ module SimpleFSM
                   #END of :action keyword
 
                   do_transform new_state, args 
+		  return true
                 end
               end
             end
+	    return false
           end
         end
       end
@@ -255,7 +257,7 @@ module SimpleFSM
     symname = sname.to_sym
     newstate = @@states.select{|a| a[:state] == symname}.first
     if !newstate
-      raise "New state (#{sname}) is empty."
+      raise "New state (#{sname}) cannot be empty."
       return
     end
 
